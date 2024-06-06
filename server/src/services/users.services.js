@@ -1,4 +1,4 @@
-const { poolPromise } = require("./database.services");
+const { poolPromise, sql } = require("./database.services");
 
 async function loginUser(email, password) {
   try {
@@ -36,7 +36,24 @@ async function registerUser(username, password, email) {
   }
 }
 
+async function applyVoucher(user_id, voucher_id) {
+  try {
+    const pool = await poolPromise;
+    // Get the voucher
+    await pool
+      .request()
+      .query(
+        `INSERT INTO User_Vouchers (user_id, voucher_id, used) VALUES ('${user_id}', '${voucher_id}', 1)`
+      );
+
+    return { success: true, message: "Voucher applied successfully" };
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   loginUser,
   registerUser,
+  applyVoucher,
 };

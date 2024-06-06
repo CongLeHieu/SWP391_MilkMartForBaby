@@ -1,13 +1,17 @@
 const express = require("express");
 
-const { createUserController, 
-        updateUserController, 
-        deleteUserController, 
-        getAllUserController, 
-        getUserByIdController} = require("../controller/admins.controller");
+const {
+  createUserController,
+  updateUserController,
+  deleteUserController,
+  getAllUserController,
+  getUserByIdController,
+} = require("../controller/admins.controller");
 
-const { createUserMiddleware, 
-        updateUserMiddleware } = require("../middlewares/admin.middlewares");
+const {
+  createUserMiddleware,
+  updateUserMiddleware,
+} = require("../middlewares/admin.middlewares");
 const adminRoutes = express.Router();
 
 // admin CRUD api
@@ -26,6 +30,6 @@ adminRoutes.get("/allUsers", getAllUserController);
 adminRoutes.get("/delete/:id", deleteUserController);
 
 //api update User
-adminRoutes.put("/update/:id", updateUserMiddleware,updateUserController);
+adminRoutes.put("/update/:id", updateUserMiddleware, updateUserController);
 
 module.exports = adminRoutes;

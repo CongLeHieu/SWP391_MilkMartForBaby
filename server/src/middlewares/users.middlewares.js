@@ -1,4 +1,4 @@
-const { poolPromise } = require("../services/database.services");
+const { poolPromise, sql } = require("../services/database.services");
 
 const registerUserMiddleware = async (req, res, next) => {
   try {
@@ -107,4 +107,81 @@ const registerUserMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = { registerUserMiddleware };
+const applyVoucherMiddleware = async (req, res, next) => {
+  try {
+    const errors = [];
+    const pool = await poolPromise;
+    const { user_id, voucher_id } = req.body;
+    if (!user_id) {
+      errors.push({
+        name: "user_id",
+        success: false,
+        message: "User ID is required",
+        status: 400,
+      });
+    }
+
+    if (!voucher_id) {
+      errors.push({
+        name: "voucher_id",
+        success: false,
+        message: "Voucher ID is required",
+        status: 400,
+      });
+    }
+
+    const result = await pool.request()
+      .query(`SELECT voucher_id, expiration_date
+       FROM Vouchers WHERE voucher_id = '${voucher_id}'`);
+
+    if (result.recordset.length === 0) {
+      errors.push({
+        name: "voucher_id",
+        success: false,
+        message: "Voucher does not exist",
+        status: 400,
+      });
+    } else {
+      const voucher = result.recordset[0];
+      const currentDate = new Date();
+
+      if (new Date(voucher.expiration_date) < currentDate) {
+        errors.push({
+          name: "voucher_id",
+          success: false,
+          message: "Voucher has expired",
+          status: 400,
+        });
+      }
+    }
+
+    const usageResult = await pool.request()
+      .query(`SELECT used FROM User_Vouchers WHERE user_id = '${user_id}' 
+    AND voucher_id = '${voucher_id}'`);
+    console.log(usageResult.recordset);
+    if (
+      usageResult.recordset.length > 0 &&
+      usageResult.recordset[0].used === true
+    ) {
+      errors.push({
+        name: "voucher_id",
+        success: false,
+        message: "Voucher has already been used",
+        status: 400,
+      });
+    }
+
+    if (errors.length > 0) {
+      return next(errors);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  registerUserMiddleware,
+  applyVoucherMiddleware,
+};

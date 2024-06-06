@@ -121,7 +121,9 @@ const updateUserMiddleware = async (req, res, next) => {
   createUserMiddleware(req, res, next);
 }
 
+
+
 module.exports = {
   createUserMiddleware,
-  updateUserMiddleware
+  updateUserMiddleware,
 };
