@@ -1,38 +1,6 @@
 const { poolPromise } = require("./database.services");
 
-async function getAllOrder() {
-  try {
-    const pool = await poolPromise;
-    const result = await pool.request().query(`
-    SELECT 
-     Orders.order_id,
-     Orders.order_date,
-     Users.username,
-     Orders.status,
-     Orders.total_amount
 
-     FROM
-     Orders
-     JOIN
-     Users
-     
-     ON
-     Orders.user_id=Users.user_id;
-
-
-    
-    `);
-    const order = result.recordset;
-
-    if (order) {
-      return { success: true, order };
-    } else {
-      return { success: false, message: "Fail to connect Order" };
-    }
-  } catch (error) {
-    throw error;
-  }
-}
 
 async function getOrderById(order_id){
   try {

@@ -40,33 +40,11 @@ function generateVoucherCode() {
 }
 
 
-async function getAllUser() {
-  try {
-    const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .query(`
-      SELECT 
-      Users.user_id,
-      Users.username,
-      Users.role_id
-      
-      FROM Users WHERE status = 1`);
-    const user = result.recordset;
-    if (user) {
-      return { success: true, user };
-    } else {
-      return { success: false, message: "Fail to get All User" };
-    }
-  } catch (error) {
-    throw error;
-  }
-}
 
 
 
 
 module.exports = {
   createVoucher,
-  getAllUser
+  
 };
