@@ -52,8 +52,24 @@ async function applyVoucher(user_id, voucher_id) {
   }
 }
 
+async function showAllVoucher() {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().query(`SELECT * FROM Vouchers`);
+    const vouchers = result.recordset;
+    if (vouchers) {
+      return { success: true, vouchers: vouchers }
+    } else {
+      return {success: false, message: "Fail to show vouchers"}
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   loginUser,
   registerUser,
   applyVoucher,
+  showAllVoucher,
 };
