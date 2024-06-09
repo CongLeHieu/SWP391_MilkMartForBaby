@@ -1,14 +1,30 @@
 import React, { useEffect, useState } from 'react'
 import ManageUser from './ManageUser'
+import { MainAPI } from '../../API'
 
 export default function GetManageUser() {
     const [users, setUsers] = useState()
-
     useEffect(() => {
-        fetch("http://127.0.0.1:1880/managestaff")
-            .then((res) => res.json())
-            .then((date) => setUsers(date))
+        const fecthData = async () => {
+            try {
+                const response = await fetch(`${MainAPI}/staff/user`, {
+                    method: "GET"
+                });
+
+                if (!response.ok) throw new Error("Failed to connect user");
+
+                const data = await response.json();
+
+                setUsers(data);
+            } catch (error) {
+                console.error(error)
+            }
+        };
+
+        fecthData();
     }, [])
+
+    console.log(users)
 
     return (
         <div>

@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import './ConfirmOrder.scss';
 
 export default function ConfirmOrder({ dataConfirm }) {
-    const [action, setAction] = useState(false);
 
     const getStatusClass = (status) => {
-        console.log(status); // Kiểm tra giá trị của status
         switch (status.toLowerCase()) {
             case 'cancel':
                 return 'status-cancel';
