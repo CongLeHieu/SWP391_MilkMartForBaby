@@ -2,204 +2,200 @@ CREATE DATABASE MilkShop
 USE MilkShop
 DROP DATABASE MilkShop
 
-CREATE TABLE Roles(
-	role_id VARCHAR(10) PRIMARY KEY,
-	role_name VARCHAR(50),
-)
+CREATE TABLE Roles (
+    role_id VARCHAR(20) PRIMARY KEY,
+    role_name NVARCHAR(50) NOT NULL
+);
 
 CREATE TABLE Users (
     user_id INT IDENTITY(1,1) PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
-    password VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    role_id VARCHAR(10) NOT NULL REFERENCES Roles(role_id),
+    username NVARCHAR(50) NOT NULL,
+    password NVARCHAR(100) NOT NULL,
+    email NVARCHAR(100) NOT NULL,
+    role_id VARCHAR(20) NOT NULL REFERENCES Roles(role_id),
     status BIT DEFAULT 1
 );
 
 CREATE TABLE Customer (
-	customer_id INT IDENTITY(1,1) PRIMARY KEY REFERENCES Users(user_id),
-	loyalty_points INT DEFAULT 0
-)
+    customer_id INT PRIMARY KEY REFERENCES Users(user_id),
+    loyalty_points INT DEFAULT 0
+);
 
+CREATE TABLE Brands (
+    brand_id INT IDENTITY(1,1) PRIMARY KEY,
+    brand_name NVARCHAR(255) NOT NULL
+);
 
-CREATE TABLE Category (
-	category_id INT IDENTITY(1,1) PRIMARY KEY,
-	category_name nvarchar(50)
+CREATE TABLE Originated_Country (
+    country_id CHAR(3) PRIMARY KEY,
+    country_name NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Age_Range (
+    age_range NVARCHAR(255) PRIMARY KEY
+);
+
+CREATE TABLE Product_Categories (
+    category_id INT IDENTITY(1,1) PRIMARY KEY,
+    category_name NVARCHAR(100) NOT NULL
 );
 
 CREATE TABLE Products (
     product_id INT IDENTITY(1,1) PRIMARY KEY,
-    product_name VARCHAR(100) NOT NULL,
+    product_name NVARCHAR(100) NOT NULL,
     description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    stock INT NOT NULL,
-    category_id INT REFERENCES Category(category_id)
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    stock INT NOT NULL CHECK (stock >= 0),
+    brand_id INT REFERENCES Brands(brand_id),
+    country_id CHAR(3) REFERENCES Originated_Country(country_id),
+    age_range NVARCHAR(255) REFERENCES Age_Range(age_range),
+    category_id INT REFERENCES Product_Categories(category_id)
 );
 
 CREATE TABLE Reviews (
     review_id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT,
-    product_id INT,
+    user_id INT NOT NULL REFERENCES Users(user_id),
+    product_id INT NOT NULL REFERENCES Products(product_id),
     rating INT CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
-    review_date DATETIME,
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (product_id) REFERENCES Products(product_id)
+    review_date DATETIME DEFAULT GETDATE()
 );
 
 CREATE TABLE Orders (
     order_id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT,
-    order_date DATETIME,
-    status VARCHAR(10),
-    total_amount DECIMAL(10, 2),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+    user_id INT NOT NULL REFERENCES Users(user_id),
+    order_date DATETIME DEFAULT GETDATE(),
+    status NVARCHAR(10),
+    total_amount DECIMAL(10, 2) NOT NULL CHECK (total_amount >= 0)
 );
 
 CREATE TABLE Order_Items (
     order_item_id INT IDENTITY(1,1) PRIMARY KEY,
-    order_id INT,
-    product_id INT,
-    quantity INT,
-    price DECIMAL(10, 2),
-    FOREIGN KEY (order_id) REFERENCES Orders(order_id),
-    FOREIGN KEY (product_id) REFERENCES Products(product_id)
+    order_id INT NOT NULL REFERENCES Orders(order_id),
+    product_id INT NOT NULL REFERENCES Products(product_id),
+    quantity INT NOT NULL CHECK (quantity > 0),
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0)
 );
 
 CREATE TABLE Vouchers (
     voucher_id INT IDENTITY(1,1) PRIMARY KEY,
-    code VARCHAR(50) UNIQUE,
-    discount DECIMAL(5, 2),
-    expiration_date DATE
+    code NVARCHAR(50) UNIQUE NOT NULL,
+    discount DECIMAL(5, 2) NOT NULL CHECK (discount >= 0),
+    expiration_date DATE NOT NULL
 );
 
 CREATE TABLE User_Vouchers (
-    user_id INT,
-    voucher_id INT,
+    user_id INT NOT NULL REFERENCES Users(user_id),
+    voucher_id INT NOT NULL REFERENCES Vouchers(voucher_id),
     used BIT DEFAULT 0,
-    PRIMARY KEY (user_id, voucher_id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (voucher_id) REFERENCES Vouchers(voucher_id)
+    PRIMARY KEY (user_id, voucher_id)
 );
 
 CREATE TABLE Payment_Methods (
     payment_method_id INT IDENTITY(1,1) PRIMARY KEY,
-    method_name VARCHAR(50) NOT NULL,
+    method_name NVARCHAR(50) NOT NULL,
     details TEXT
 );
 
 CREATE TABLE Payments (
     payment_id INT IDENTITY(1,1) PRIMARY KEY,
-    order_id INT,
-    payment_method_id INT,
-    transaction_date DATETIME NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
-    transaction_status VARCHAR(20) NOT NULL,
-    payment_details TEXT,
-    FOREIGN KEY (order_id) REFERENCES Orders(order_id),
-    FOREIGN KEY (payment_method_id) REFERENCES Payment_Methods(payment_method_id)
+    order_id INT NOT NULL REFERENCES Orders(order_id),
+    payment_method_id INT NOT NULL REFERENCES Payment_Methods(payment_method_id),
+    transaction_date DATETIME NOT NULL DEFAULT GETDATE(),
+    amount DECIMAL(10, 2) NOT NULL CHECK (amount >= 0),
+    transaction_status NVARCHAR(20) NOT NULL,
+    payment_details TEXT
 );
 
-CREATE TABLE Posts(
-	post_id int IDENTITY(1,1) PRIMARY KEY,
-	user_id int,
-	FOREIGN KEY (user_id) REFERENCES Users(user_id),
-	content text,
-	post_date DATETIME,
-	product_id int,
-	FOREIGN KEY (product_id) REFERENCES Products(product_id)
-)
+CREATE TABLE Posts (
+    post_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES Users(user_id),
+    content TEXT,
+    post_date DATETIME DEFAULT GETDATE(),
+    product_id INT REFERENCES Products(product_id)
+);
 
+CREATE TABLE RefreshTokens (
+  token VARCHAR(255) PRIMARY KEY,
+  user_id INT,
+  expiryDate DATETIME,
+  FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
 
--- Roles
-INSERT INTO Roles (role_id, role_name) VALUES ('admin', 'Administrator');
-INSERT INTO Roles (role_id, role_name) VALUES ('customer', 'Customer');
+-- Insert into Roles
+INSERT INTO Roles (role_id, role_name) VALUES
+('admin', 'Admin'),
+('customer', 'Customer'),
+('staff', 'Staff');
 
+-- Insert into Users
+INSERT INTO Users (username, password, email, role_id) VALUES
+('admin_user', 'password123', 'admin@example.com', 'admin'),
+('customer1', 'password123', 'customer1@example.com', 'customer'),
+('customer2', 'password123', 'customer2@example.com', 'customer'),
+('staff1', '123456789', 'staff1@example.com', 'staff');
 
--- Users
-INSERT INTO Users (username, password, email, role_id) VALUES ('admin', 'adminpass', 'admin@example.com', 'admin');
-INSERT INTO Users (username, password, email, role_id) VALUES ('user1', 'user1pass', 'user1@example.com', 'customer');
-INSERT INTO Users (username, password, email, role_id) VALUES ('user2', 'user2pass', 'user2@example.com', 'customer');
-INSERT INTO Users (username, password, email, role_id) VALUES ('user3', 'user3pass', 'user3@example.com', 'customer');
-INSERT INTO Users (username, password, email, role_id) VALUES ('user4', 'user4pass', 'user4@example.com', 'customer');
-INSERT INTO Users (username, password, email, role_id) VALUES ('user5', 'user5pass', 'user5@example.com', 'customer');
+-- Insert into Customer
+INSERT INTO Customer (customer_id, loyalty_points) VALUES
+(2, 100),
+(3, 150);
 
--- Customers
-INSERT INTO Customer ( loyalty_points) VALUES ( 150);
-INSERT INTO Customer ( loyalty_points) VALUES ( 200);
-INSERT INTO Customer ( loyalty_points) VALUES ( 300);
-INSERT INTO Customer ( loyalty_points) VALUES ( 400);
-INSERT INTO Customer ( loyalty_points) VALUES ( 250);
+-- Insert into Brands
+INSERT INTO Brands (brand_name) VALUES
+('BabyMilk Co.'),
+('Maternal Care Inc.');
 
--- Category
-INSERT INTO Category (category_name) VALUES ('Baby Care');
-INSERT INTO Category (category_name) VALUES ('Maternity');
+-- Insert into Originated_Country
+INSERT INTO Originated_Country (country_id, country_name) VALUES
+('USA', 'United States'),
+('CAN', 'Canada'),
+('JPN', 'Japan'),
+('GER', 'Germany');
 
--- Products
-INSERT INTO Products (product_name, description, price, stock, category_id) VALUES ('Baby Shampoo', 'Gentle shampoo for babies', 5.99, 50, 1);
-INSERT INTO Products (product_name, description, price, stock, category_id) VALUES ('Baby Lotion', 'Moisturizing lotion for baby skin', 4.99, 30, 1);
-INSERT INTO Products (product_name, description, price, stock, category_id) VALUES ('Maternity Dress', 'Comfortable dress for expecting mothers', 29.99, 20, 2);
-INSERT INTO Products (product_name, description, price, stock, category_id) VALUES ('Nursing Pillow', 'Support pillow for breastfeeding', 19.99, 15, 2);
-INSERT INTO Products (product_name, description, price, stock, category_id) VALUES ('Diaper Bag', 'Spacious diaper bag with multiple pockets', 39.99, 25, 1);
+-- Insert into Age_Range
+INSERT INTO Age_Range (age_range) VALUES
+('0-6 months'),
+('6-12 months'),
+('1-2 years'),
+('More than 2 years old'),
+('Maternal'),
+('Adult');
 
--- Reviews
-INSERT INTO Reviews (user_id, product_id, rating, comment, review_date) VALUES (2, 1, 5, 'Great shampoo for my baby!', GETDATE());
-INSERT INTO Reviews (user_id, product_id, rating, comment, review_date) VALUES (3, 2, 4, 'Lotion is good but a bit pricey.', GETDATE());
-INSERT INTO Reviews (user_id, product_id, rating, comment, review_date) VALUES (4, 3, 5, 'Love this maternity dress!', GETDATE());
-INSERT INTO Reviews (user_id, product_id, rating, comment, review_date) VALUES (5, 4, 5, 'Very useful pillow for nursing.', GETDATE());
-INSERT INTO Reviews (user_id, product_id, rating, comment, review_date) VALUES (6, 5, 4, 'Bag is spacious but could use more compartments.', GETDATE());
+-- Insert into Product_Categories
+INSERT INTO Product_Categories (category_name) VALUES
+('Infant Milk'),
+('Maternal Milk');
 
--- Orders
-INSERT INTO Orders (user_id, order_date, status, total_amount) VALUES (2, GETDATE(), 'Pending', 45.97);
-INSERT INTO Orders (user_id, order_date, status, total_amount) VALUES (3, GETDATE(), 'Completed', 34.98);
-INSERT INTO Orders (user_id, order_date, status, total_amount) VALUES (4, GETDATE(), 'Shipped', 29.99);
-INSERT INTO Orders (user_id, order_date, status, total_amount) VALUES (5, GETDATE(), 'Delivered', 19.99);
-INSERT INTO Orders (user_id, order_date, status, total_amount) VALUES (6, GETDATE(), 'Cancelled', 39.99);
+-- Insert into Products
+INSERT INTO Products (product_name, description, price, stock, brand_id, country_id, age_range, category_id) VALUES
+('Infant Milk Powder', 'High-quality milk powder for infants 0-6 months.', 25.99, 100, 1, 'USA', '0-6 months', 1),
+('Maternal Milk Supplement', 'Nutritional supplement for mothers.', 19.99, 50, 2, 'CAN', '1-2 years', 2),
+('Baby Formula', 'Baby formula for infants 6-12 months.', 29.99, 75, 1, 'USA', '6-12 months', 1),
+('Toddler Milk Drink', 'Nutritious milk drink for toddlers.', 22.99, 60, 1, 'GER', '1-2 years', 1),
+('Organic Baby Formula', 'Organic formula for infants 0-6 months.', 35.99, 40, 2, 'CAN', '0-6 months', 1),
+('Maternal Health Drink', 'Healthy drink for pregnant women.', 27.99, 30, 2, 'JPN', 'Maternal', 2),
+('Junior Growth Milk', 'Growth milk for kids over 2 years.', 32.99, 80, 1, 'USA', 'More than 2 years old', 1),
+('Adult Milk Powder', 'Milk powder for adults.', 20.99, 45, 1, 'USA', 'Adult', 2),
+('Soy-Based Infant Formula', 'Soy-based formula for infants 0-6 months.', 29.99, 50, 2, 'GER', '0-6 months', 1),
+('Lactose-Free Baby Formula', 'Lactose-free formula for infants.', 33.99, 70, 1, 'USA', '0-6 months', 1);
 
--- Order_Items
-INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES (1, 1, 2, 5.99);
-INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES (1, 2, 1, 4.99);
-INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES (2, 3, 1, 29.99);
-INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES (2, 4, 1, 4.99);
-INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES (3, 3, 1, 29.99);
-INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES (4, 4, 1, 19.99);
-INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES (5, 5, 1, 39.99);
+-- Insert into Orders
+INSERT INTO Orders (user_id, order_date, status, total_amount) VALUES
+(2, '2024-06-01', 'Completed', 55.98),
+(3, '2024-06-05', 'Pending', 29.99);
 
--- Vouchers
-INSERT INTO Vouchers (code, discount, expiration_date) VALUES ('DISCOUNT10', 10.00, '2024-12-31');
-INSERT INTO Vouchers (code, discount, expiration_date) VALUES ('SAVE20', 20.00, '2024-11-30');
-INSERT INTO Vouchers (code, discount, expiration_date) VALUES ('WELCOME5', 5.00, '2024-10-31');
-INSERT INTO Vouchers (code, discount, expiration_date) VALUES ('FREESHIP', 0.00, '2024-09-30');
-INSERT INTO Vouchers (code, discount, expiration_date) VALUES ('NEWUSER15', 15.00, '2024-08-31');
+-- Insert into Order_Items
+INSERT INTO Order_Items (order_id, product_id, quantity, price) VALUES
+(1, 1, 1, 25.99),
+(1, 2, 1, 19.99),
+(2, 3, 1, 29.99);
 
--- User_Vouchers
-INSERT INTO User_Vouchers (user_id, voucher_id, used) VALUES (2, 1, 0);
-INSERT INTO User_Vouchers (user_id, voucher_id, used) VALUES (3, 2, 1);
-INSERT INTO User_Vouchers (user_id, voucher_id, used) VALUES (4, 3, 0);
-INSERT INTO User_Vouchers (user_id, voucher_id, used) VALUES (5, 4, 0);
-INSERT INTO User_Vouchers (user_id, voucher_id, used) VALUES (6, 5, 1);
-
--- Payment_Methods
-INSERT INTO Payment_Methods (method_name, details) VALUES ('Credit Card', 'Visa/MasterCard');
-INSERT INTO Payment_Methods (method_name, details) VALUES ('PayPal', 'user@example.com');
-INSERT INTO Payment_Methods (method_name, details) VALUES ('Bank Transfer', 'Bank XYZ');
-INSERT INTO Payment_Methods (method_name, details) VALUES ('Cash on Delivery', 'Pay at your doorstep');
-INSERT INTO Payment_Methods (method_name, details) VALUES ('Gift Card', 'Redeemable online');
-
--- Payments
-INSERT INTO Payments (order_id, payment_method_id, transaction_date, amount, transaction_status, payment_details) VALUES (1, 1, GETDATE(), 45.97, 'Pending', 'Transaction ID: 12345');
-INSERT INTO Payments (order_id, payment_method_id, transaction_date, amount, transaction_status, payment_details) VALUES (2, 2, GETDATE(), 34.98, 'Completed', 'Transaction ID: 12346');
-INSERT INTO Payments (order_id, payment_method_id, transaction_date, amount, transaction_status, payment_details) VALUES (3, 3, GETDATE(), 29.99, 'Shipped', 'Transaction ID: 12347');
-INSERT INTO Payments (order_id, payment_method_id, transaction_date, amount, transaction_status, payment_details) VALUES (4, 4, GETDATE(), 19.99, 'Delivered', 'Transaction ID: 12348');
-INSERT INTO Payments (order_id, payment_method_id, transaction_date, amount, transaction_status, payment_details) VALUES (5, 5, GETDATE(), 39.99, 'Cancelled', 'Transaction ID: 12349');
-
--- Posts
-INSERT INTO Posts (user_id, content, post_date, product_id) VALUES (2, 'Really happy with the baby shampoo!', GETDATE(), 1);
-INSERT INTO Posts (user_id, content, post_date, product_id) VALUES (3, 'The baby lotion works wonders.', GETDATE(), 2);
-INSERT INTO Posts (user_id, content, post_date, product_id) VALUES (4, 'This maternity dress is so comfortable!', GETDATE(), 3);
-INSERT INTO Posts (user_id, content, post_date, product_id) VALUES (5, 'Nursing pillow is a must-have for new moms.', GETDATE(), 4);
-INSERT INTO Posts (user_id, content, post_date, product_id) VALUES (6, 'Love the diaper bag, very practical.', GETDATE(), 5);
-
-select * from Orders
-select * from Order_Items
-select * from Posts
+-- Insert into Vouchers
+INSERT INTO Vouchers (code, discount, expiration_date) VALUES
+('DISCOUNT10', 10.00, '2024-12-31'),
+('WELCOME5', 5.00, '2024-06-30'),
+('SPRING20', 20.00, '2024-07-31'),
+('SUMMER15', 15.00, '2024-08-31'),
+('FALL10', 10.00, '2024-09-30'),
+('WINTER5', 5.00, '2024-10-31'),
+('NEWYEAR25', 25.00, '2025-01-01');
